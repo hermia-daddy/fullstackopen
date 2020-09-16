@@ -1,0 +1,18 @@
+title sequence of entry note application
+
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/notes
+server-->brower: notes html code 
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.css
+server-->brower: main.css code
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.js
+server-->brower: main.js code
+note over brower:
+brower execute main.js
+using XMLHttpRequest to get json data
+end note
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/data.json
+server-->brower: json data {[{},{},...],[{},{}..],...}
+
+note over brower:
+brower render json data
+end note

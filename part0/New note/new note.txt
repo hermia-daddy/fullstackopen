@@ -1,0 +1,13 @@
+title new note
+
+note over brower:
+user input content and click post button
+end note
+
+brower->server: HTTP POST https://studies.cs.helsinki.fi/exampleapp/new_note_spa
+server-->brower: result json data {"message":"note created"}
+
+note over brower:
+brower render user input content
+end note
+
