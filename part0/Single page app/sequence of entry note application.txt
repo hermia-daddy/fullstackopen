@@ -1,13 +1,13 @@
 title sequence of entry note application
 
-brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/notes
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/spa
 server-->brower: notes html code 
 brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.css
 server-->brower: main.css code
-brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/main.js
-server-->brower: main.js code
+brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/spa.js
+server-->brower: spa.js code
 note over brower:
-brower execute main.js
+brower execute spa.js
 using XMLHttpRequest to get json data
 end note
 brower->server: HTTP GET https://studies.cs.helsinki.fi/exampleapp/data.json
