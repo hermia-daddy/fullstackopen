@@ -1,39 +1,73 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Filter from './components/Filter'
 import PersonForm from './components/PersonForm'
-import Persons from './components/Persons'
+import Person from './components/Person'
+import servicePerson from './service/Persons'
+import Notification from './components/Notification'
 
 
 const App = () => {
-    const [persons, setPersons] = useState([
-        { name: 'Arto Hellas', number: '040-123456' },
-        { name: 'Ada Lovelace', number: '39-44-5323523' },
-        { name: 'Dan Abramov', number: '12-43-234345' },
-        { name: 'Mary Poppendieck', number: '39-23-6423122' }])
+    const [persons, setPersons] = useState([])
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('')
-    const [newSearchWord,setSearchWord] = useState('')
-    const [newSearchPersons,setNewSearchPersons] = useState([...persons])
+    const [newSearchWord, setSearchWord] = useState('')
+    const [newSearchPersons, setNewSearchPersons] = useState([])
+    const [message, setMessage] = useState(null)
+    const [error,setError] = useState(null)
+
+    useEffect(() => {
+        servicePerson.getAll()
+            .then(initialPersons => {
+                setPersons(initialPersons)
+                setNewSearchPersons(initialPersons)
+            })
+    }, [])
 
     const exitName = (p) => p.name === newName
 
     const addPerson = (event) => {
 
         event.preventDefault()
-        if (persons.some(exitName)) {
-            alert(`${newName} is already added to phonebook`)
-            return
-        }
+
         const newPerson = {
             name: newName,
             number: newNumber
         }
-        setPersons(persons.concat(newPerson))
-        if(newName.toLowerCase().indexOf(newSearchWord.toLowerCase())>-1){
-            setNewSearchPersons(newSearchPersons.concat(newPerson))
+
+        const existPerson = persons.find((p) => p.name === newName)
+
+        if (existPerson) {
+            if (window.confirm(`${existPerson.name} is already added to phonebook,replace the old number with a new one ?`)) {
+                servicePerson.update(existPerson.id, newPerson)
+                    .then(returnedPerson => {
+                        setPersons(persons.map(p => p.id === returnedPerson.id ? returnedPerson : p))
+                        if (newName.toLowerCase().indexOf(newSearchWord.toLowerCase()) > -1) {
+                            setNewSearchPersons(newSearchPersons.map(p => p.id === returnedPerson.id ? returnedPerson : p))
+                        }
+                        setMessage(`change ${newName} number ${newNumber}`)
+                        setTimeout(() => {
+                            setMessage(null)
+                        }, 5000)
+                        setNewName('')
+                        setNewNumber('')
+                    })
+            }
+        } else {
+            servicePerson.create(newPerson)
+                .then(returnedPerson => {
+                    setPersons(persons.concat(returnedPerson))
+                    if (newName.toLowerCase().indexOf(newSearchWord.toLowerCase()) > -1) {
+                        setNewSearchPersons(newSearchPersons.concat(returnedPerson))
+                    }
+                    setMessage(`add ${newName}`)
+                    setTimeout(() => {
+                        setMessage(null)
+                    }, 5000)
+                    setNewName('')
+                    setNewNumber('')
+                })
         }
-        setNewName('')
-        setNewNumber('')
+
     }
 
     const handleOnPersonNameChange = (event) => {
@@ -44,25 +78,51 @@ const App = () => {
         setNewNumber(event.target.value)
     }
 
-    const handleSearch = (event) =>{
+    const handleSearch = (event) => {
         setSearchWord(event.target.value)
-        if(event.target.value){
-         const searchPersons =   persons.filter(p=>p.name.toLowerCase().indexOf(event.target.value.toLowerCase())>-1)
-         setNewSearchPersons(searchPersons)
-        }else{
+        if (event.target.value) {
+            const searchPersons = persons.filter(p => p.name.toLowerCase().indexOf(event.target.value.toLowerCase()) > -1)
+            setNewSearchPersons(searchPersons)
+        } else {
             setNewSearchPersons(persons)
         }
-        
+
+    }
+
+    const deletePerson = (id) => {
+        var deletePerson = persons.find(p => p.id === id)
+        if (window.confirm(`delete ${deletePerson.name} ?`)) {
+            servicePerson.remove(id)
+                .then(deleteId => {
+                    setPersons(persons.filter(p => p.id !== id))
+                    setNewSearchPersons(newSearchPersons.filter(p => p.id !== id))
+                })
+                .catch(error=>{
+                    const deletedPerson = persons.find(p=>p.id === id)
+                    setPersons(persons.filter(p => p.id !== id))
+                    setNewSearchPersons(newSearchPersons.filter(p => p.id !== id))
+                    console.log('error:',error.response);
+                    setError(`Information of ${deletedPerson.name} has already been removed from server`)
+                    setTimeout(()=>{
+                        setError(null)
+                    },5000)
+                })
+        }
     }
 
     return (
+
         <div>
             <h2>Phonebook</h2>
-            <Filter handleSearch={handleSearch} newSearchWord={newSearchWord}/>
+            <Notification message={message} error={error}/>
+            <Filter handleSearch={handleSearch} newSearchWord={newSearchWord} />
             <h2>add a new</h2>
             <PersonForm addPerson={addPerson} handleOnPersonNameChange={handleOnPersonNameChange} handleOnPersonNumberChange={handleOnPersonNumberChange} newName={newName} newNumber={newNumber} />
             <h2>Numbers</h2>
-            <Persons searchedPersons={newSearchPersons}/>
+            <div>
+                {newSearchPersons.map((person) => <Person key={person.id} person={person} deletePerson={() => deletePerson(person.id)} />)}
+            </div>
+
         </div>
     )
 }
