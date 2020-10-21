@@ -13,7 +13,7 @@ const App = () => {
     const [newSearchWord, setSearchWord] = useState('')
     const [newSearchPersons, setNewSearchPersons] = useState([])
     const [message, setMessage] = useState(null)
-    const [error,setError] = useState(null)
+    const [error, setError] = useState(null)
 
     useEffect(() => {
         servicePerson.getAll()
@@ -23,7 +23,6 @@ const App = () => {
             })
     }, [])
 
-    const exitName = (p) => p.name === newName
 
     const addPerson = (event) => {
 
@@ -34,39 +33,28 @@ const App = () => {
             number: newNumber
         }
 
-        const existPerson = persons.find((p) => p.name === newName)
-
-        if (existPerson) {
-            if (window.confirm(`${existPerson.name} is already added to phonebook,replace the old number with a new one ?`)) {
-                servicePerson.update(existPerson.id, newPerson)
-                    .then(returnedPerson => {
-                        setPersons(persons.map(p => p.id === returnedPerson.id ? returnedPerson : p))
-                        if (newName.toLowerCase().indexOf(newSearchWord.toLowerCase()) > -1) {
-                            setNewSearchPersons(newSearchPersons.map(p => p.id === returnedPerson.id ? returnedPerson : p))
-                        }
-                        setMessage(`change ${newName} number ${newNumber}`)
-                        setTimeout(() => {
-                            setMessage(null)
-                        }, 5000)
-                        setNewName('')
-                        setNewNumber('')
-                    })
-            }
-        } else {
-            servicePerson.create(newPerson)
-                .then(returnedPerson => {
-                    setPersons(persons.concat(returnedPerson))
-                    if (newName.toLowerCase().indexOf(newSearchWord.toLowerCase()) > -1) {
-                        setNewSearchPersons(newSearchPersons.concat(returnedPerson))
-                    }
-                    setMessage(`add ${newName}`)
-                    setTimeout(() => {
-                        setMessage(null)
-                    }, 5000)
-                    setNewName('')
-                    setNewNumber('')
-                })
-        }
+        servicePerson.create(newPerson)
+            .then(returnedPerson => {
+                setPersons(persons.concat(returnedPerson))
+                if (newName.toLowerCase().indexOf(newSearchWord.toLowerCase()) > -1) {
+                    setNewSearchPersons(newSearchPersons.concat(returnedPerson))
+                }
+                setMessage(`add ${newName}`)
+                setTimeout(() => {
+                    setMessage(null)
+                }, 5000)
+                setNewName('')
+                setNewNumber('')
+            })
+            .catch(error => {
+                console.log('error:', error.response)
+                setError(error.response.data.error)
+                setTimeout(() => {
+                    setError(null)
+                }, 5000)
+                setNewName('')
+                setNewNumber('')
+            })
 
     }
 
@@ -86,26 +74,25 @@ const App = () => {
         } else {
             setNewSearchPersons(persons)
         }
-
     }
 
     const deletePerson = (id) => {
         var deletePerson = persons.find(p => p.id === id)
         if (window.confirm(`delete ${deletePerson.name} ?`)) {
             servicePerson.remove(id)
-                .then(deleteId => {
+                .then(() => {
                     setPersons(persons.filter(p => p.id !== id))
                     setNewSearchPersons(newSearchPersons.filter(p => p.id !== id))
                 })
-                .catch(error=>{
-                    const deletedPerson = persons.find(p=>p.id === id)
+                .catch(error => {
+                    const deletedPerson = persons.find(p => p.id === id)
                     setPersons(persons.filter(p => p.id !== id))
                     setNewSearchPersons(newSearchPersons.filter(p => p.id !== id))
-                    console.log('error:',error.response);
+                    console.log('error:', error.response)
                     setError(`Information of ${deletedPerson.name} has already been removed from server`)
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         setError(null)
-                    },5000)
+                    }, 5000)
                 })
         }
     }
@@ -114,7 +101,7 @@ const App = () => {
 
         <div>
             <h2>Phonebook</h2>
-            <Notification message={message} error={error}/>
+            <Notification message={message} error={error} />
             <Filter handleSearch={handleSearch} newSearchWord={newSearchWord} />
             <h2>add a new</h2>
             <PersonForm addPerson={addPerson} handleOnPersonNameChange={handleOnPersonNameChange} handleOnPersonNumberChange={handleOnPersonNumberChange} newName={newName} newNumber={newNumber} />
@@ -122,7 +109,6 @@ const App = () => {
             <div>
                 {newSearchPersons.map((person) => <Person key={person.id} person={person} deletePerson={() => deletePerson(person.id)} />)}
             </div>
-
         </div>
     )
 }
